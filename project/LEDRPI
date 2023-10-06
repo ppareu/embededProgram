@@ -9,308 +9,68 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jdk.dio.DeviceManager;
 import jdk.dio.gpio.GPIOPin;
-import jdk.dio.gpio.PinEvent;
-import jdk.dio.gpio.PinListener;
-// LED blink toggling
+
 /**
  *
  * @author comit4
  */
-public class LEDRPI implements Runnable{
-    //LED pin
-    private final String LED_PIN = "GPIO17";    // LED 1
-    private final String LED_PIN2 = "GPIO18";   // LED 2
-    private final String LED_PIN3 = "GPIO22";   // LED 3
-    private final String LED_PIN4 = "GPIO27";   // LED 4
-    private final String LED_PIN5 = "GPIO5";    // LED 5 기계 동작 LED장치
-   
-    private final String LED_BTN = "GPIO23";    // 카운팅 버튼
-    private final String EXIT_BTN = "GPIO24";   // 종료 버튼
-   
-    private int cnt = 0;
-    // 객체 선언
-    private GPIOPin ledPin = null;
-    private GPIOPin ledPin2 = null;
-    private GPIOPin ledPin3 = null;
-    private GPIOPin ledPin4 = null;
-    private GPIOPin ledPin5 = null;
-   
-    private GPIOPin ledBtn = null;
-    private GPIOPin exitBtn = null; // 두 번째 버튼 누르면 프로그램 종료
-   
-    private volatile boolean toggling = false, exit = false;// 중요!!
-   
-   
-    public LEDRPI() {
-        try {
-            ledPin  = DeviceManager.open(LED_PIN, GPIOPin.class);
-            ledPin2 = DeviceManager.open(LED_PIN2, GPIOPin.class);
-            ledPin3 = DeviceManager.open(LED_PIN3, GPIOPin.class);
-            ledPin4 = DeviceManager.open(LED_PIN4, GPIOPin.class);
-            ledPin5 = DeviceManager.open(LED_PIN5, GPIOPin.class);
-           
-            ledBtn  = DeviceManager.open(LED_BTN, GPIOPin.class);
-            exitBtn = DeviceManager.open(EXIT_BTN, GPIOPin.class);
-           
-            ledBtn.setInputListener(new PinListener () {
-                @Override
-                public void valueChanged(PinEvent pe) {
-                    if (pe.getValue() == false) {
-                        on();
-                    }
-                }
-            });
-           
-            exitBtn.setInputListener(new PinListener() {
-                @Override
-                public void valueChanged(PinEvent pe) {
-                    if(pe.getValue() == false) // 현재 버튼 값 읽어옴
-                        exit = true;
-                }
-            });
-           
-        } catch (IOException ex) {
-            Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
-        }
+public class LEDRPI{
+    
+    private GPIOPin gpioPin = null;
+    private String gpioName = null;
+    private Thread blinkThread = null;
+    private int blinkMillis = 0;
+
+    public LEDRPI(String gpioName) throws IOException {
+        this.gpioName = gpioName;
+        this.gpioPin = DeviceManager.open(gpioName, GPIOPin.class);
     }
     
-    public void on() {
-        try {
-            switch (cnt) {
-            case 0:
-                ledPin.setValue(false);
-                ledPin2.setValue(false);
-                ledPin3.setValue(false);
-                ledPin4.setValue(true);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-            case 1:
-                ledPin.setValue(false);
-                ledPin2.setValue(false);
-                ledPin3.setValue(true);
-                ledPin4.setValue(false);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 2:
-                ledPin.setValue(false);
-                ledPin2.setValue(false);
-                ledPin3.setValue(true);
-                ledPin4.setValue(true);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 3:
-                ledPin.setValue(false);
-                ledPin2.setValue(true);
-                ledPin3.setValue(false);
-                ledPin4.setValue(false);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 4:
-                ledPin.setValue(false);
-                ledPin2.setValue(true);
-                ledPin3.setValue(false);
-                ledPin4.setValue(true);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 5:
-                ledPin.setValue(false);
-                ledPin2.setValue(true);
-                ledPin3.setValue(true);
-                ledPin4.setValue(false);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 6:
-                ledPin.setValue(false);
-                ledPin2.setValue(true);
-                ledPin3.setValue(true);
-                ledPin4.setValue(true);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 7:
-                ledPin.setValue(true);
-                ledPin2.setValue(false);
-                ledPin3.setValue(false);
-                ledPin4.setValue(false);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 8:
-                ledPin.setValue(true);
-                ledPin2.setValue(false);
-                ledPin3.setValue(false);
-                ledPin4.setValue(true);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 9:
-                ledPin.setValue(true);
-                ledPin2.setValue(false);
-                ledPin3.setValue(true);
-                ledPin4.setValue(false);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 10:
-                ledPin.setValue(true);
-                ledPin2.setValue(false);
-                ledPin3.setValue(true);
-                ledPin4.setValue(true);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 11:
-                ledPin.setValue(true);
-                ledPin2.setValue(true);
-                ledPin3.setValue(false);
-                ledPin4.setValue(false);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 12:
-                ledPin.setValue(true);
-                ledPin2.setValue(true);
-                ledPin3.setValue(false);
-                ledPin4.setValue(true);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 13:
-                ledPin.setValue(true);
-                ledPin2.setValue(true);
-                ledPin3.setValue(true);
-                ledPin4.setValue(false);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 14:
-                ledPin.setValue(true);
-                ledPin2.setValue(true);
-                ledPin3.setValue(true);
-                ledPin4.setValue(true);
-                cnt++;
-                //System.out.println("Button count : " + cnt);
-                break;
-
-            case 15:
-                ledPin.setValue(false);
-                ledPin2.setValue(false);
-                ledPin3.setValue(false);
-                ledPin4.setValue(false);
-                cnt = 0;
-                //System.out.println("Button count : " + cnt);
-                break;
-            }
-
-        } catch (IOException ex) {
-            Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    public void on() throws IOException {
+        this.gpioPin.setValue(true);
     }
    
-    public void off() {
-        try {
-            // Led 전부 종료
-            ledPin.setValue(false);
-            ledPin2.setValue(false);
-            ledPin3.setValue(false);
-            ledPin4.setValue(false);
-            ledPin5.setValue(false);
-            cnt = 0;
-        } catch (IOException ex) {
-            Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
-        }
-       
+    public void off() throws IOException {
+        this.gpioPin.setValue(false);
     }
    
-    public void toggle() {
-        try {
-            toggling = !toggling;
-            ledPin5.setValue(toggling);
-        } catch (IOException ex) {
-            Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    public void toggle() throws IOException {
+        gpioPin.setValue(!gpioPin.getValue());
     }
    
     
     public void blick(int millis) {
-        if (millis != 0) { // 0이 아닌 경우 동작
-            while (!exit) {
-                try {
-                    toggle();
-                    Thread.sleep(millis);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
+        this.blinkMillis = millis;
+        if (blinkThread == null) { // 0이 아닌 경우 동작
+            blinkThread =  new Thread(new Runnable() {
+                @Override
+                public void run() {
+                     while (true) {
+                         try {
+                             toggle();
+                             Thread.sleep(blinkMillis);
+                         } catch (IOException ex) {
+                             Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
+                         } catch (InterruptedException ex) {
+                             Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
+                         }
+                     }
                 }
-            }
+            });
+            blinkThread.start();
+        }
+        
+        if (millis == 0) {
+            blinkThread.suspend();
+        } else {
+            blinkThread.resume();
         }
 
     }
    
-    public void close() { // 프로그램 종료
-        try {
-            if (ledPin != null && ledPin.isOpen())
-                ledPin.close();
-            if (ledPin2 != null && ledPin2.isOpen())
-                ledPin2.close();
-            if (ledPin3 != null && ledPin3.isOpen())
-                ledPin3.close();
-            if (ledPin4 != null && ledPin4.isOpen())
-                ledPin4.close();
-            if (ledPin5 != null && ledPin5.isOpen())
-                ledPin5.close();
-            if (ledBtn != null && ledBtn.isOpen())
-                ledBtn.close();
-            if (exitBtn != null && exitBtn.isOpen())
-                exitBtn.close();
-        } catch (IOException ex) {
-            Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
+    public void close() throws IOException { // 프로그램 종료
+        if(gpioPin != null && gpioPin.isOpen()){
+            gpioPin.close();
         }
     }
-   
-    public void run() {
-        while (!exit) {
-            System.out.println("Program Start!!!");
-
-            blick(500); // 500msc
-        }
-      
-        System.out.println("Program exit...");
-        off();
-        close();
-    }
-   
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        // TODO code application logic here
-       
-        Thread t = new Thread(new LEDRPI());
-        /*
-        Runnable 인터페이스 상속 run 메소드를 받고 있다
-        thread를 start시키면 run한다
-        thread는 2개 실행 main과 ButtonEventTest
-        */
-        t.start();
-    }
-   
 }

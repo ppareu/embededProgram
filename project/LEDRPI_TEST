@@ -1,0 +1,326 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
+ */
+package com.jiot.ledrpi;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import jdk.dio.DeviceManager;
+import jdk.dio.gpio.GPIOPin;
+import jdk.dio.gpio.PinEvent;
+import jdk.dio.gpio.PinListener;
+// LED blink toggling
+/**
+ *
+ * @author comit4
+ */
+public class LEDRPI_TEST implements Runnable{
+    
+    private final String LED_PIN = "GPIO17";    // LED 1
+    private final String LED_PIN2 = "GPIO18";   // LED 2
+    private final String LED_PIN3 = "GPIO22";   // LED 3
+    private final String LED_PIN4 = "GPIO27";   // LED 4
+    private final String LED_PIN5 = "GPIO5";    // LED 5 기계 동작 LED장치
+   
+    private final String LED_BTN = "GPIO23";    // 카운팅 버튼
+    private final String EXIT_BTN = "GPIO24";   // 종료 버튼
+    
+    private int cnt = 0;
+    
+    // 객체 선언
+    private LEDRPI ledPin = null;
+    private LEDRPI ledPin2 = null;
+    private LEDRPI ledPin3 = null;
+    private LEDRPI ledPin4 = null;
+    private LEDRPI ledPin5 = null;
+   
+    private GPIOPin ledBtn;
+    private GPIOPin exitBtn; // 두 번째 버튼 누르면 프로그램 종료
+   
+    private volatile boolean toggling = false, exit = false;
+    
+    public LEDRPI_TEST() throws IOException {
+        try {
+            this.ledPin = new LEDRPI(LED_PIN);
+            this.ledPin2 = new LEDRPI(LED_PIN2);
+            this.ledPin3 = new LEDRPI(LED_PIN3);
+            this.ledPin4 = new LEDRPI(LED_PIN4);
+            this.ledPin5 = new LEDRPI(LED_PIN5);
+           
+            this.ledBtn = DeviceManager.open(LED_BTN, GPIOPin.class);
+            this.exitBtn = DeviceManager.open(EXIT_BTN, GPIOPin.class);
+         
+        } catch (IOException ex) {
+            Logger.getLogger(LEDRPI_TEST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+       
+        ledBtn.setInputListener(new PinListener() {
+            @Override
+            public void valueChanged(PinEvent pe) {
+                if (!pe.getValue()) {
+                    LEDCNT();
+                    System.out.println("count : "+cnt);
+                    
+                    if(cnt>=16){
+                        cnt=0;
+                    }
+                    
+                    String bin = Integer.toBinaryString(cnt);
+                    System.out.println("Binary : "+bin);
+                    
+                    
+                }
+               
+              }
+        });
+       
+        exitBtn.setInputListener(new PinListener() {
+            @Override
+            public void valueChanged(PinEvent pe) {
+                if (!pe.getValue()) {
+                    exit = true;
+                }
+            }
+        });
+    }
+    
+    public void LEDCNT() {
+        try {
+            cnt = (cnt + 1) % 16; // 0부터 15까지 순환
+            
+            boolean led1 = (cnt & 8) == 8;  // 첫 번째 LED
+            boolean led2 = (cnt & 4) == 4;  // 두 번째 LED
+            boolean led3 = (cnt & 2) == 2;  // 세 번째 LED
+            boolean led4 = (cnt & 1) == 1;  // 네 번째 LED
+
+            if (led1) {
+                ledPin.on();
+            } else {
+                ledPin.off();
+            }
+            if (led2) {
+                ledPin2.on();
+            } else {
+                ledPin2.off();
+            }
+            if (led3) {
+                ledPin3.on();
+            } else {
+                ledPin3.off();
+            }
+            if (led4) {
+                ledPin4.on();
+            } else {
+                ledPin4.off();
+            }
+
+            
+        } catch (IOException ex) {
+            Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+//    public void LEDCNT() {
+//        try {
+//            switch (cnt) {
+//            case 0:
+//                ledPin.off();
+//                ledPin2.off();
+//                ledPin3.off();
+//                ledPin4.on();
+//                cnt++;
+//                break;
+//            case 1:
+//                ledPin.off();
+//                ledPin2.off();
+//                ledPin3.on();
+//                ledPin4.off();
+//                cnt++;
+//                break;
+//
+//            case 2:
+//                ledPin.off();
+//                ledPin2.off();
+//                ledPin3.on();
+//                ledPin4.on();
+//                cnt++;
+//                break;
+//
+//            case 3:
+//                ledPin.off();
+//                ledPin2.on();
+//                ledPin3.off();
+//                ledPin4.off();
+//                cnt++;
+//                break;
+//
+//            case 4:
+//                ledPin.off();
+//                ledPin2.on();
+//                ledPin3.off();
+//                ledPin4.on();
+//                cnt++;
+//                break;
+//
+//            case 5:
+//                ledPin.off();
+//                ledPin2.on();
+//                ledPin3.on();
+//                ledPin4.off();
+//                cnt++;
+//                break;
+//
+//            case 6:
+//                ledPin.off();
+//                ledPin2.on();
+//                ledPin3.on();
+//                ledPin4.on();
+//                cnt++;
+//                break;
+//
+//            case 7:
+//                ledPin.on();
+//                ledPin2.off();
+//                ledPin3.off();
+//                ledPin4.off();
+//                cnt++;
+//                break;
+//
+//            case 8:
+//                ledPin.on();
+//                ledPin2.off();
+//                ledPin3.off();
+//                ledPin4.on();
+//                cnt++;
+//                break;
+//
+//            case 9:
+//                ledPin.on();
+//                ledPin2.off();
+//                ledPin3.on();
+//                ledPin4.off();
+//                cnt++;
+//                break;
+//
+//            case 10:
+//                ledPin.on();
+//                ledPin2.off();
+//                ledPin3.on();
+//                ledPin4.on();
+//                cnt++;
+//                break;
+//
+//            case 11:
+//                ledPin.on();
+//                ledPin2.on();
+//                ledPin3.off();
+//                ledPin4.off();
+//                cnt++;
+//                break;
+//
+//            case 12:
+//                ledPin.on();
+//                ledPin2.on();
+//                ledPin3.off();
+//                ledPin4.on();
+//                cnt++;
+//                break;
+//
+//            case 13:
+//                ledPin.on();
+//                ledPin2.on();
+//                ledPin3.on();
+//                ledPin4.off();
+//                cnt++;
+//                break;
+//
+//            case 14:
+//                ledPin.on();
+//                ledPin2.on();
+//                ledPin3.on();
+//                ledPin4.on();
+//                cnt++;
+//                break;
+//
+//            case 15:
+//                ledPin.off();
+//                ledPin2.off();
+//                ledPin3.off();
+//                ledPin4.off();
+//                cnt = 0;
+//                break;
+//            }
+//
+//        } catch (IOException ex) {
+//            Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//    }
+
+    public void LEDoff() {
+        try {
+            // Led 전부 종료
+            ledPin.off();
+            ledPin2.off();
+            ledPin3.off();
+            ledPin4.off();
+            ledPin5.off();
+            cnt = 0;
+        } catch (IOException ex) {
+            Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void close() { // 프로그램 종료
+        try {
+            if (ledPin != null)
+                ledPin.close();
+            if (ledPin2 != null)
+                ledPin2.close();
+            if (ledPin3 != null)
+                ledPin3.close();
+            if (ledPin4 != null)
+                ledPin4.close();
+            if (ledPin5 != null)
+                ledPin5.close();
+            if (ledBtn != null && ledBtn.isOpen())
+                ledBtn.close();
+            if (exitBtn != null && exitBtn.isOpen())
+                exitBtn.close();
+        } catch (IOException ex) {
+            Logger.getLogger(LEDRPI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+   
+    public void run() {
+        System.out.println("Program Start!!!");
+        while(!exit) {
+            try {
+                ledPin5.toggle();
+                Thread.sleep(500);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(LEDRPI_TEST.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(LEDRPI_TEST.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        System.out.println("Program exit...");
+        LEDoff();
+        close();
+    }
+    
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        // TODO code application logic here
+        try {
+            Thread t = new Thread(new LEDRPI_TEST());
+            t.start();
+        } catch (IOException ex) {
+            Logger.getLogger(LEDRPI_TEST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+   
+}

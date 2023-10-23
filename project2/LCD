@@ -1,0 +1,159 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.jiot.MIDRPI;
+
+import java.io.IOException;
+import jdk.dio.DeviceManager;
+import jdk.dio.gpio.GPIOPin;
+
+/**
+ *
+ * @author comit2
+ */
+public class LCD {
+    private final String RSPIN = "GPIO2";
+    private final String RWPIN = "GPIO3";
+    private final String EPIN = "GPIO4";
+    private final String D0PIN = "GPIO17";
+    private final String D1PIN = "GPIO27";
+    private final String D2PIN = "GPIO22";
+    private final String D3PIN = "GPIO10";
+    private final String D4PIN = "GPIO9";
+    private final String D5PIN = "GPIO11";
+    private final String D6PIN = "GPIO5";
+    private final String D7PIN = "GPIO6";
+   
+    private GPIOPin rspin = null;
+    private GPIOPin rwpin = null;
+    private GPIOPin epin = null;
+    private GPIOPin d0pin = null;
+    private GPIOPin d1pin = null;
+    private GPIOPin d2pin = null;
+    private GPIOPin d3pin = null;
+    private GPIOPin d4pin = null;
+    private GPIOPin d5pin = null;
+    private GPIOPin d6pin = null;
+    private GPIOPin d7pin = null;
+   
+    public LCD() throws IOException {
+        rspin = DeviceManager.open(RSPIN, GPIOPin.class);
+        rwpin = DeviceManager.open(RWPIN, GPIOPin.class);
+        epin = DeviceManager.open(EPIN, GPIOPin.class);
+        d0pin = DeviceManager.open(D0PIN, GPIOPin.class);
+        d1pin = DeviceManager.open(D1PIN, GPIOPin.class);
+        d2pin = DeviceManager.open(D2PIN, GPIOPin.class);
+        d3pin = DeviceManager.open(D3PIN, GPIOPin.class);
+        d4pin = DeviceManager.open(D4PIN, GPIOPin.class);
+        d5pin = DeviceManager.open(D5PIN, GPIOPin.class);
+        d6pin = DeviceManager.open(D6PIN, GPIOPin.class);
+        d7pin = DeviceManager.open(D7PIN, GPIOPin.class);
+    }
+   
+    public void write(char c) throws IOException, InterruptedException {
+        //문자 한개만 받을거임
+        //받으면 그 문자의 아스키코드값을 추출.
+        //아스키코드값에따라 코드 실행
+        int asc = (int)c;
+        String binaryString = String.format("%8s", Integer.toBinaryString(asc)).replace(' ', '0');
+        boolean code[] = { false, false, false, false, false, false, false, false};
+        for (int i = 0; i < binaryString.length(); i++) {
+            char bit = binaryString.charAt(i);
+            boolean isHigh = (bit == '1');  // 1인 경우 true, 0인 경우 false
+            code[i] = isHigh;
+        }
+        rspin.setValue(true);
+        rwpin.setValue(false);
+        epin.setValue(true);
+        d0pin.setValue(code[7]);
+        d1pin.setValue(code[6]);
+        d2pin.setValue(code[5]);
+        d3pin.setValue(code[4]);
+        d4pin.setValue(code[3]);
+        d5pin.setValue(code[2]);
+        d6pin.setValue(code[1]);
+        d7pin.setValue(code[0]);
+        Thread.sleep(2);
+        epin.setValue(false);
+        Thread.sleep(2);
+    }
+   
+    public void writeCmd(char c) throws IOException, InterruptedException {
+        //문자 한개만 받을거임
+        //받으면 그 문자의 아스키코드값을 추출.
+        //아스키코드값에따라 코드 실행
+        int asc = (int)c;
+        String binaryString = String.format("%8s", Integer.toBinaryString(asc)).replace(' ', '0');
+        boolean code[] = { false, false, false, false, false, false, false, false};
+        for (int i = 0; i < binaryString.length(); i++) {
+            char bit = binaryString.charAt(i);
+            boolean isHigh = (bit == '1');  // 1인 경우 true, 0인 경우 false
+            code[i] = isHigh;
+        }
+        rspin.setValue(false);
+        rwpin.setValue(false);
+        epin.setValue(true);
+        d0pin.setValue(code[7]);
+        d1pin.setValue(code[6]);
+        d2pin.setValue(code[5]);
+        d3pin.setValue(code[4]);
+        d4pin.setValue(code[3]);
+        d5pin.setValue(code[2]);
+        d6pin.setValue(code[1]);
+        d7pin.setValue(code[0]);
+        Thread.sleep(2);
+        epin.setValue(false);
+        Thread.sleep(2);
+    }
+   
+    public void wrtStr(String s) throws IOException, InterruptedException {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            write(c);
+            Thread.sleep(1);
+        }
+    }
+   
+    public void line(int i) throws IOException, InterruptedException {
+        rspin.setValue(false);
+        rwpin.setValue(false);
+        epin.setValue(true);
+        d0pin.setValue(false);
+        if(i == 1) {
+            d6pin.setValue(false);
+            d7pin.setValue(false);
+        } else if(i == 2) {
+            d6pin.setValue(true);
+            d7pin.setValue(true);
+        }
+        d2pin.setValue(false);
+        d3pin.setValue(false);
+        d4pin.setValue(false);
+        d5pin.setValue(false);
+        d1pin.setValue(false);
+        Thread.sleep(2);
+        epin.setValue(false);
+        Thread.sleep(2);
+    }
+   
+    public void startClear() throws IOException, InterruptedException {
+        //화면 지우고 처음줄로 커서이동
+        Thread.sleep(100);
+        writeCmd((char) 0x38);
+        Thread.sleep(10);
+        writeCmd((char) 0x38);
+        Thread.sleep(200);
+        writeCmd((char) 0x38);
+        Thread.sleep(200);
+        writeCmd((char) 0x38);
+        writeCmd((char) 0x0c);
+        writeCmd((char) 0x01);
+    }
+   
+    public void clear() throws IOException, InterruptedException {
+        //화면 지우고 처음줄로 커서이동
+        Thread.sleep(2);
+        writeCmd((char) 0x01);
+    }
+}

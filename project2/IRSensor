@@ -1,0 +1,31 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.jiot.MIDRPI;
+
+import com.jiot.spi_dev.SPIRPI;
+import com.jiot.spi_dev.driver.MCP3208Device;
+import java.io.IOException;
+
+/**
+ *
+ * @author comit2
+ */
+public class IRSensor {
+   
+private final int IR_SENSOR_CHANNEL = 0;
+    private MCP3208Device adcDev = null;
+   
+    public IRSensor() throws IOException {
+        adcDev = new MCP3208Device(SPIRPI.CE1);
+       
+    }
+   
+    public double getDistance() throws IOException {
+        int irValue = adcDev.analogRead(IR_SENSOR_CHANNEL);
+        double volt = (double)(irValue * 5.0) / 4095.0;
+        return (27.61 / (volt - 0.1696));
+    }
+   
+}

@@ -1,0 +1,49 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.jiot.MIDRPI;
+
+import java.io.IOException;
+import jdk.dio.DeviceManager;
+import jdk.dio.gpio.GPIOPin;
+
+/**
+ *
+ * @author comit2
+ */
+public class HPSensor {
+    private final String TRIGPIN = "GPIO19";
+    private final String ECHOPIN = "GPIO26";
+   
+    private GPIOPin trigPin = null;
+    private GPIOPin echoPin = null;
+   
+    double Distance;
+   
+    public HPSensor() throws IOException {
+        trigPin = DeviceManager.open(TRIGPIN, GPIOPin.class);
+        echoPin = DeviceManager.open(ECHOPIN, GPIOPin.class);
+        trigPin.setDirection(GPIOPin.OUTPUT); // TRIG 핀을 출력 모드로 설정
+        echoPin.setDirection(GPIOPin.INPUT);
+    }
+   
+    public double getHpDistance() throws IOException, InterruptedException {
+        trigPin.setValue(false);
+        Thread.sleep(1);
+        trigPin.setValue(true);
+        Thread.sleep(1);
+        trigPin.setValue(false);
+       
+        while (echoPin.getValue() == false); // 에코 핀이 LOW일 때 기다립니다.
+        long start = System.nanoTime();
+        while (echoPin.getValue() == true); // 에코 핀이 HIGH일 때 기다립니다.
+        long end = System.nanoTime();
+
+        // 에코 시간 측정
+        long Length = end-start;
+        Distance = (Length * 0.0343) /2.0;
+        return Distance/1000.0;
+    }
+   
+}

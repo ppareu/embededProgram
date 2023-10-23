@@ -1,0 +1,91 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
+ */
+package com.jiot.MIDRPI;
+
+import static com.jiot.MIDRPI.BUZZER.NOTE;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import jdk.dio.gpio.GPIOPin;
+
+public class MIDRPI {
+   
+    private IRSensor irSensor = null;
+    private HPSensor hpSensor = null;
+    private BUZZER buzzer = null;
+    private LCD lcd = null;
+    private final String BUZZ_PIN = "GPIO13";
+   
+    private GPIOPin buzpin = null;
+    public int buzOn = 0;
+
+    public MIDRPI() throws IOException {
+        irSensor = new IRSensor();
+        hpSensor = new HPSensor();
+        buzzer = new BUZZER();
+        lcd = new LCD();
+    }
+   
+   
+    public void run() throws IOException, InterruptedException {
+        lcd.startClear();
+        lcd.line(1);
+        Thread irThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        double irDistance = irSensor.getDistance();
+                        System.out.println("IR Distance : " + irDistance + " cm");
+                        String formIR = String.format("%.2f", irDistance);
+                        double hpDistance = hpSensor.getHpDistance();
+                        System.out.println("HpDistance: " + hpDistance + " cm");
+                        String formHP = String.format("%.2f", hpDistance);
+                        lcd.clear();
+                        lcd.line(1);
+                        lcd.wrtStr("IR:" + formIR);
+                        lcd.line(2);
+                        lcd.wrtStr("HP:" + formHP);
+                        if(hpDistance <= 15 && buzOn == 0) {
+                            buzzer.play(NOTE.NOTE_c);
+                            buzOn = 1;
+                        } else if(hpDistance <= 8 && buzOn == 1) {
+                            buzzer.stop();
+                            buzzer.play(NOTE.NOTE_C);
+                        } else if(hpDistance > 15 && buzOn == 1) {
+                            buzzer.stop();
+                            buzOn = 0;
+                        }
+                       
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ex) {
+                            // 예외 처리
+                        }
+                    } catch (IOException ex) {
+                        Logger.getLogger(MIDRPI.class.getName()).log(Level.SEVERE, null, ex);
+                        // 예외 처리
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(MIDRPI.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });
+        irThread.start();
+
+        // 메인 스레드가 각 스레드를 시작하고 병렬로 실행할 수 있음
+    }
+   
+    public static void main(String[] args) {
+        try {
+            MIDRPI test = new MIDRPI();
+            test.run();
+        } catch (IOException ex) {
+            Logger.getLogger(MIDRPI.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(MIDRPI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+}

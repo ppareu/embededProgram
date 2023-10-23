@@ -1,0 +1,83 @@
+*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.jiot.MIDRPI;
+
+import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import jdk.dio.DeviceManager;
+import jdk.dio.gpio.GPIOPin;
+
+/**
+ *
+ * @author comit2
+ */
+
+public class BUZZER {
+    private final String BUZZ_PIN = "GPIO13";
+   
+    private GPIOPin buzpin = null;
+   
+    private ScheduledExecutorService executor = null;
+    private ScheduledFuture future = null;
+   
+    public enum NOTE {
+        NOTE_c(3830),
+        NOTE_d(3400),
+        NOTE_e(3038),
+        NOTE_f(2864),
+        NOTE_g(2550),
+        NOTE_a(2272),
+        NOTE_b(2028),
+        NOTE_C(1916)
+        ;
+
+        private int value;
+
+        private NOTE(int value) {
+            this.value = value;
+        }
+
+        public int get() {
+            return this.value;
+        }
+    }
+
+    public BUZZER() throws IOException {
+        buzpin = DeviceManager.open(BUZZ_PIN, GPIOPin.class);
+        executor = Executors.newSingleThreadScheduledExecutor();
+    }
+   
+    public void close() {
+        try {
+            if(buzpin != null && buzpin.isOpen()) {
+                buzpin.close();
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(BUZZER.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+   
+    public void play(NOTE note) {
+        future = executor.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    buzpin.setValue(!buzpin.getValue());
+                } catch (IOException ex) {
+                    Logger.getLogger(BUZZER.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }, 0, note.get()/2, TimeUnit.MICROSECONDS);
+    }
+   
+    public void stop() {
+        future.cancel(false);
+    }
+}

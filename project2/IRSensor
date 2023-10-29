@@ -29,3 +29,57 @@ private final int IR_SENSOR_CHANNEL = 0;
     }
    
 }
+
+
+-----------------------------------------------------------------------------------------------------
+
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.jiot.mid_term;
+
+import com.jiot.spi_dev.SPIRPI;
+import com.jiot.spi_dev.driver.MCP3208Device;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ *
+ * @author comit25
+ */
+public class PSDController {
+    private MCP3208Device adcDev = null;
+    
+    public PSDController(String pinName){
+        try {
+            adcDev = new MCP3208Device(SPIRPI.CE1);
+        } catch (IOException ex) {
+            Logger.getLogger(PSDController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void close(){
+        try {
+            adcDev.close();
+        } catch (IOException ex) {
+            Logger.getLogger(PSDController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public double getDistance(){
+        double distance = 0.0;
+        
+        try {
+            distance = (27.61 / (adcDev.convertVolts(adcDev.analogRead(0)) - 0.1696));
+        } catch (IOException ex) {
+            Logger.getLogger(PSDController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        distance = Math.round(distance * 10.0) / 10.0;
+        
+        return distance;
+    }
+    
+}

@@ -1,0 +1,236 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package newpackage;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import jdk.dio.DeviceManager;
+import jdk.dio.gpio.GPIOPin;
+import jdk.dio.gpio.GPIOPinConfig;
+
+/**
+ *
+ * @author comit19
+ */
+public class LCDDisplay {
+    //output pin
+    private int LCD_RS_PIN = 19;  // LCD RS 핀
+    private int LCD_E_PIN = 26;   // LCD E 핀
+    //private static final String LCD_RW_PIN;  // LCD R/W pin connect gnd   
+    private int LCD_D0_PIN = 12;  // LCD 데이터 핀 D1
+    private int LCD_D1_PIN = 16;  // LCD 데이터 핀 D2
+    private int LCD_D2_PIN = 20;  // LCD 데이터 핀 D3
+    private int LCD_D3_PIN = 21;  // LCD 데이터 핀 D4
+    //
+    private GPIOPin lcdRS = null;
+    private GPIOPin lcdE = null;
+    private GPIOPin[] lcdData4 = null;
+    
+    private int displayfunction = 0;
+    private int displaycontrol = 0;
+    private int displaymode = 0;
+    
+    private int[] rowOffsets = { 0x00, 0x40 }; 
+    
+    public LCDDisplay() throws IOException {
+        init(LCD_RS_PIN, LCD_E_PIN, LCD_D0_PIN, LCD_D1_PIN, LCD_D2_PIN, LCD_D3_PIN);
+        initializeLCD();
+    }
+    
+    public LCDDisplay(int rs, int enable, int d0, int d1, int d2, int d3) throws IOException {
+        init(rs, enable, d0, d1, d2, d3);
+        initializeLCD();
+    }
+
+    private void init(int rs, int enable, int d0, int d1, int d2, int d3) throws IOException {
+        lcdRS = openByDeviceConfig(rs);
+        lcdE = openByDeviceConfig(enable);
+        
+        lcdData4 = new GPIOPin[4];
+        lcdData4[0] = openByDeviceConfig(d0);
+        lcdData4[1] = openByDeviceConfig(d1);
+        lcdData4[2] = openByDeviceConfig(d2);
+        lcdData4[3] = openByDeviceConfig(d3);
+    }
+    
+    public void close() throws IOException {
+        //리소스 해제
+        if (lcdRS != null && lcdRS.isOpen()) 
+            lcdRS.close();
+        if (lcdE != null && lcdE.isOpen()) 
+            lcdE.close();
+        for (int i = 0; i < 4; i++) {
+            if (lcdData4[i] != null && lcdData4[i].isOpen()) 
+                lcdData4[i].close();
+        }
+    }
+    
+    // LCD 디스플레이를 초기화하는 메서드 
+    private void initializeLCD() throws IOException {        
+        // SEE PAGE 45/46 FOR INITIALIZATION SPECIFICATION!
+        // according to datasheet, we need at least 40 ms after power rises above 2.7 V
+        // before sending commands. Arduino can turn on way before 4.5 V so we'll wait 50
+        delayMicroseconds(50000); 
+        
+        // Now we pull both RS and R/W low to begin commands
+        lcdRS.setValue(false);
+        lcdE.setValue(false);
+
+        // we start in 8bit mode, try to set 4 bit mode
+        write4bits(0x03);
+        delayMicroseconds(4500); // wait min 4.1ms
+
+        // second try
+        write4bits(0x03);
+        delayMicroseconds(4500); // wait min 4.1ms
+
+        // third go!
+        write4bits(0x03); 
+        delayMicroseconds(150);
+
+        // finally, set to 4-bit interface
+        write4bits(0x02); 
+
+        // finally, set # lines, font size, etc.
+        displayfunction |= LCDDisplayCommand.LCD_4BITMODE
+            | LCDDisplayCommand.LCD_2LINE
+            | LCDDisplayCommand.LCD_5x8DOTS;
+
+        sendCommand(LCDDisplayCommand.LCD_FUNCTIONSET | displayfunction);  
+
+        // turn the display on with no cursor or blinking default
+        displaycontrol = LCDDisplayCommand.LCD_DISPLAYON 
+                | LCDDisplayCommand.LCD_CURSOROFF 
+                | LCDDisplayCommand.LCD_BLINKOFF;  
+        display();
+
+        // clear it off
+        clear();
+
+        // Initialize to default text direction (for romance languages)
+        displaymode = LCDDisplayCommand.LCD_ENTRYLEFT | LCDDisplayCommand.LCD_ENTRYSHIFTDECREMENT;
+        // set the entry mode
+        sendCommand(LCDDisplayCommand.LCD_ENTRYMODESET | displaymode);
+    }
+
+    /********** high level commands, for the user! */
+    private void clear() throws IOException
+    {
+      sendCommand(LCDDisplayCommand.LCD_CLEARDISPLAY);  // clear display, set cursor position to zero
+      delayMicroseconds(2000);  // this command takes a long time!
+    }
+
+    private void home() throws IOException
+    {
+      sendCommand(LCDDisplayCommand.LCD_RETURNHOME);  // set cursor position to zero
+      delayMicroseconds(2000);  // this command takes a long time!
+    }
+    
+    // Turn the display on/off (quickly)
+    private void noDisplay() throws IOException {
+      displaycontrol &= ~LCDDisplayCommand.LCD_DISPLAYON;
+      sendCommand(LCDDisplayCommand.LCD_DISPLAYCONTROL | displaycontrol);
+    }
+    
+    private void display() throws IOException {
+      displaycontrol |= LCDDisplayCommand.LCD_DISPLAYON;
+      sendCommand(LCDDisplayCommand.LCD_DISPLAYCONTROL | displaycontrol);
+    }
+    
+    private void setCursor(int col, int row) throws IOException
+    {
+        sendCommand(LCDDisplayCommand.LCD_SETDDRAMADDR | (col + rowOffsets[row]));
+    }
+    
+    // LCD 디스플레이에 텍스트 출력하는 메서드
+    private void print(String text) throws IOException {
+         for (char c : text.toCharArray()) {
+            sendCharacter(c); // 문자 출력
+        }
+    }
+  
+    /*
+    public void print(int value) throws IOException {
+      print(String.valueOf(value));
+    }
+
+    public void print(long value) throws IOException {
+      print(String.valueOf(value));
+    }
+
+    public void print(double value) throws IOException {
+      print(String.valueOf(value));
+    }
+
+    public void print(float value) throws IOException {
+      print(String.valueOf(value));
+    }*/
+
+    private void sendCommand(int command) throws IOException {
+        send(command, false);
+    }
+    
+    private void sendCharacter(char character) throws IOException {
+        send(character, true);
+    }
+
+    private void send(int value, boolean mode) throws IOException {    // mode : false=command, true=data
+        lcdRS.setValue(mode);
+
+        write4bits(value>>4);
+        write4bits(value);
+    }
+
+    private void pulseEnable() throws IOException {
+        lcdE.setValue(false);
+        delayMicroseconds(1);    
+        lcdE.setValue(true);
+        delayMicroseconds(1);    // enable pulse must be >450 ns
+        lcdE.setValue(false);
+        delayMicroseconds(100);   // commands need >37 us to settle
+    }
+
+    private void write4bits(int value) throws IOException {
+      for (int i = 0; i < 4; i++) {
+          lcdData4[i].setValue(((value >> i) & 0x01) != 0 ? true : false);
+      }
+
+      pulseEnable();
+    }
+
+    private GPIOPin openByDeviceConfig(int pinNum) throws IOException {
+        GPIOPinConfig gpioConfig = new GPIOPinConfig.Builder()
+                .setControllerNumber(0)
+                .setPinNumber(pinNum)
+                .setDriveMode(GPIOPinConfig.MODE_OUTPUT_PUSH_PULL)
+                .setDirection(GPIOPinConfig.DIR_OUTPUT_ONLY)
+                .setInitValue(false)
+                .build();
+        
+        return DeviceManager.open(gpioConfig);
+    }
+    
+    private void delayMicroseconds(int micros) {
+        try {
+            Thread.sleep((micros/1000), ((micros%1000)*1000));
+        } catch (InterruptedException ex) {
+            Logger.getLogger(LCDDisplay.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void showDisplay(double ultrasonicDistance, double infraredDistance) throws IOException {
+        // LCD clear
+        clear();
+        
+        // 첫 번째 줄에 초음파 거리 출력
+        setCursor(0, 0);
+        print("Ultra:" + ultrasonicDistance + "cm"); 
+        
+        // 두 번째 줄에 적외선 거리 출력
+        setCursor(0, 1);
+        print("Infra:" + infraredDistance + "cm"); 
+    }
+}

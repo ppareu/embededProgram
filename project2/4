@@ -1,0 +1,73 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package newpackage;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+
+/**
+ *
+ * @author comit19
+ */
+public class MainTest implements Runnable {
+    private final String ULT_SENSOR_TRIG_PIN = "GPIO17";
+    private final String ULT_SENSOR_ECHO_PIN = "GPIO18";
+    private final String BUZZER_PIN = "GPIO23";
+    //    
+    private UltrasonicSensor ultrasonicSenser = null;
+    private InfSensor infSensor = null;
+    private LCDDisplay lcdDisplay = null;
+    private Buzzer buzzer = null;
+    
+    public MainTest() throws IOException {
+        ultrasonicSenser = new UltrasonicSensor(ULT_SENSOR_TRIG_PIN, ULT_SENSOR_ECHO_PIN);
+        infSensor = new InfSensor();
+        lcdDisplay = new LCDDisplay();
+        buzzer = new Buzzer(BUZZER_PIN);
+    }
+    
+    public void run() {
+        System.out.println("Start!");
+               
+        while(true) {
+            
+            try {
+                System.out.println("===================================");
+                
+                double ultDistance = ultrasonicSenser.GetDistance();
+                System.out.println("ultrasonic Distance: " + ultDistance + "cm");
+             
+                double infDistance = infSensor.getDistance();
+                System.out.println("infSensor Distance: " + infDistance + "cm");
+                
+                lcdDisplay.showDisplay(ultDistance, infDistance);
+                
+                buzzer.obstacleNotify((infDistance <= 15) ? true : false);
+                
+                try {
+                    Thread.sleep(500); // 측정 주기 (500ms)
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(MainTest.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(MainTest.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        try {
+            Thread t = new Thread(new MainTest());
+            t.start();
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(MainTest.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+    }
+}

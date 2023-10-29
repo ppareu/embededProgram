@@ -1,0 +1,245 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package newpackage;
+
+import java.io.IOException;
+import jdk.dio.DeviceManager;
+import jdk.dio.gpio.GPIOPin;
+
+/**
+ *
+ * @author comit19
+ */
+public class _LCDDisplay {
+    //output pin
+    private String LCD_RS_PIN = "GPIO5";  // LCD RS 핀
+    private String LCD_E_PIN = "GPIO23";   // LCD E 핀
+    //private static final String LCD_RW_PIN;  // LCD R/W pin connect gnd   
+    private String LCD_D1_PIN = "GPIO6";  // LCD 데이터 핀 D1
+    private String LCD_D2_PIN = "GPIO24";  // LCD 데이터 핀 D2
+    private String LCD_D3_PIN = "GPIO25";  // LCD 데이터 핀 D3
+    private String LCD_D4_PIN = "GPIO26";  // LCD 데이터 핀 D4
+    //
+    private GPIOPin lcdRS = null;
+    private GPIOPin lcdE = null;
+    private GPIOPin lcdD1 = null;
+    private GPIOPin lcdD2 = null;
+    private GPIOPin lcdD3 = null;
+    private GPIOPin lcdD4 = null;
+    //
+    private int senseMillis = 500;  
+    // LCD 디스플레이에 출력할 첫 번째 줄과 두 번째 줄을 나타내는 문자열 변수
+    private String firstLine = "";
+    private String secondLine = "";
+    
+    
+   
+    public _LCDDisplay(String pinName) throws IOException{
+        //this.lcdPinName = pinName;
+        
+        // GPIO 핀을 초기화
+        lcdRS = DeviceManager.open(LCD_RS_PIN, GPIOPin.class);
+        lcdE = DeviceManager.open(LCD_E_PIN, GPIOPin.class);
+        lcdD1 = DeviceManager.open(LCD_D1_PIN, GPIOPin.class);
+        lcdD2 = DeviceManager.open(LCD_D2_PIN, GPIOPin.class);
+        lcdD3 = DeviceManager.open(LCD_D3_PIN, GPIOPin.class);     
+        lcdD4 = DeviceManager.open(LCD_D4_PIN, GPIOPin.class);
+    }
+    
+    /*
+    private static void setBitsToPins(GPIOPin d4, GPIOPin d5, GPIOPin d6, GPIOPin d7, int command) throws IOException {
+        d4.setValue(((command >> 0) & 0x01) == 1);
+        d5.setValue(((command >> 1) & 0x01) == 1);
+        d6.setValue(((command >> 2) & 0x01) == 1);
+        d7.setValue(((command >> 3) & 0x01) == 1);
+    }
+
+    
+    private static void sendCommand(GPIOPin rs, GPIOPin e, GPIOPin d4, GPIOPin d5, GPIOPin d6, GPIOPin d7, int command) throws IOException {
+        // RS 핀을 명령 모드로 설정
+        rs.setValue(false);
+
+        // 명령을 데이터 핀에 설정
+        setBitsToPins(d4, d5, d6, d7, command);
+
+        // E 핀을 활성화하여 명령 전송
+        e.setValue(true);
+        e.setValue(false);
+    
+    // 명령 전송 후 대기 시간을 줄 수도 있음 (LCD에 따라 다를 수 있음)
+    }
+
+    
+    private static void initializeLCD(GPIOPin rs, GPIOPin e, GPIOPin d4, GPIOPin d5, GPIOPin d6, GPIOPin d7) throws IOException {
+        // LCD 초기화 과정을 여기에 추가
+        // RS, E, D4, D5, D6, D7 핀을 설정
+        
+        // 4비트 데이터 전송 모드 설정
+        sendCommand(rs, e, d4, d5, d6, d7, 0x03);
+        sendCommand(rs, e, d4, d5, d6, d7, 0x03);
+        sendCommand(rs, e, d4, d5, d6, d7, 0x03);
+        sendCommand(rs, e, d4, d5, d6, d7, 0x02);
+
+        // 화면 클리어
+        sendCommand(rs, e, d4, d5, d6, d7, 0x01);
+
+        // 커서 홈 (커서 위치를 홈으로 이동)
+        sendCommand(rs, e, d4, d5, d6, d7, 0x02);
+
+        // 표시 모드 설정 (커서 깜빡임 활성화, 텍스트 표시 활성화)
+        sendCommand(rs, e, d4, d5, d6, d7, 0x0C);
+
+        // 입력 모드 설정 (텍스트 입력 시 커서 이동)
+        sendCommand(rs, e, d4, d5, d6, d7, 0x06);
+    }
+    
+    private static void sendCharacter(GPIOPin rs, GPIOPin e, GPIOPin d4, GPIOPin d5, GPIOPin d6, GPIOPin d7, char character) throws IOException {
+        int charCode = (int) character;
+
+        // RS 핀을 데이터 모드로 설정
+        rs.setValue(true);
+
+        // 문자를 4비트 데이터로 변환하고 LCD에 전송
+        setBitsToPins(d4, d5, d6, d7, (charCode >> 4) & 0x0F);
+        e.setValue(true);
+        e.setValue(false);
+        setBitsToPins(d4, d5, d6, d7, charCode & 0x0F);
+        e.setValue(true);
+        e.setValue(false);
+
+        // 문자 전송 후 대기 시간을 줄 수도 있음 (LCD에 따라 다를 수 있음)
+    }
+    
+
+    private static void writeTextToLCD(GPIOPin rs, GPIOPin e, GPIOPin d4, GPIOPin d5, GPIOPin d6, GPIOPin d7, String firstLine, String secondLine) throws IOException {
+        // LCD에 텍스트 출력 과정을 여기에 추가
+        // RS 핀을 데이터 모드로 설정
+        rs.setValue(true);
+
+        // 텍스트 문자열을 문자로 나누고 LCD에 출력
+        // 첫 번째 줄 출력
+        for (char c : firstLine.toCharArray()) {
+            sendCharacter(rs, e, d4, d5, d6, d7, c);
+        }
+
+        // 두 번째 줄로 커서 이동
+        sendCommand(rs, e, d4, d5, d6, d7, 0xC0);
+
+        // 두 번째 줄 출력
+        for (char c : secondLine.toCharArray()) {
+            sendCharacter(rs, e, d4, d5, d6, d7, c);
+        }
+    }
+
+    // LCD 디스플레이에 거리 정보를 설정하는 메서드
+    public void setDistance(double ultrasonicDistance, double infraredDistance) {
+        firstLine = "초음파 거리: " + ultrasonicDistance + " cm";
+        secondLine = "적외선 거리: " + infraredDistance + " cm";
+    }
+
+    // LCD 디스플레이에 설정된 내용을 출력하는 메서드
+    public void display(double ultrasonicDistance, double infraredDistance) throws IOException {
+
+        setDistance(ultrasonicDistance, infraredDistance);
+        
+        // LCD 초기화
+        initializeLCD(lcdRS, lcdE, lcdD4, lcdD5, lcdD6, lcdD7);
+
+        // LCD에 텍스트 출력
+        writeTextToLCD(lcdRS, lcdE, lcdD4, lcdD5, lcdD6, lcdD7, firstLine, secondLine);
+    }*/
+    
+
+    
+    public void sendCommand(int command) throws IOException {
+        //if (lcdRS.isOpen()) {
+            lcdRS.setValue(false);
+            setBitsToPins(command);
+            lcdE.setValue(true);
+            lcdE.setValue(false);
+        //}
+    }
+    
+    // LCD 디스플레이를 초기화하는 메서드
+    public void initializeLCD() throws IOException {
+        sendCommand(0x33); // 4-bit 데이터 모드 설정
+        sendCommand(0x32); // 4-bit 데이터 모드 설정
+        sendCommand(0x28); // 2-line 표시, 5x8 폰트
+        sendCommand(0x0C); // 표시 켜기, 커서 숨기기, 커서 깜빡임 비활성화
+        sendCommand(0x06); // 커서 오른쪽 이동, 문자 이동 시 디스플레이 이동 비활성화
+        sendCommand(0x01); // 화면 클리어
+    }
+    
+    // LCD 디스플레이에 텍스트 출력하는 메서드
+    public void printText(String text, int row, int col) throws IOException {
+        int[] rowOffsets = { 0x00, 0x40 };
+        int offset = col + rowOffsets[row];
+        sendCommand(0x80 | offset); // 커서 위치 설정
+
+         for (char c : text.toCharArray()) {
+            sendCharacter(c); // 문자 출력
+        }
+    }
+
+    
+    private void setBitsToPins(int data) throws IOException {
+        // Implement this method to set bits to D4, D5, D6, D7 pins
+        // D1 핀 설정 (1번째 비트)
+        lcdD1.setValue(((data >> 0) & 0x01) == 1);
+
+        // D2 핀 설정 (2번째 비트)
+        lcdD2.setValue(((data >> 1) & 0x01) == 1);
+
+        // D3 핀 설정 (3번째 비트)
+        lcdD3.setValue(((data >> 2) & 0x01) == 1);
+
+        // D4 핀 설정 (4번째 비트)
+        lcdD4.setValue(((data >> 3) & 0x01) == 1);
+}
+
+
+    private void sendCharacter(char character) throws IOException {
+        //if (lcdRS.isOpen()) {
+            int charCode = (int) character;
+            lcdRS.setValue(true);
+
+            setBitsToPins((charCode >> 4) & 0x0F);
+            lcdE.setValue(true);
+            lcdE.setValue(false);
+
+            setBitsToPins(charCode & 0x0F);
+            lcdE.setValue(true);
+            lcdE.setValue(false);
+        //}
+    }
+
+    
+    public void display(double ultrasonicDistance, double infraredDistance) throws IOException {
+        initializeLCD();// LCD 초기화
+        printText("Ultrasonic: " + ultrasonicDistance + "cm", 0, 0); // 첫 번째 줄에 초음파 거리 출력
+        printText("Infrared: " + infraredDistance + "cm", 1, 0); // 두 번째 줄에 적외선 거리 출력
+        close();
+    }
+    
+    public void close() {
+        try {
+            //리소스 해제
+            if (lcdRS != null && lcdRS.isOpen()) 
+                lcdRS.close();
+            if (lcdE != null && lcdE.isOpen()) 
+                lcdE.close();
+            if (lcdD1 != null && lcdD1.isOpen()) 
+                lcdD1.close();
+            if (lcdD2 != null && lcdD2.isOpen()) 
+                lcdD2.close();
+            if (lcdD3 != null && lcdD3.isOpen()) 
+                lcdD3.close();
+            if (lcdD4 != null && lcdD4.isOpen()) 
+                lcdD4.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

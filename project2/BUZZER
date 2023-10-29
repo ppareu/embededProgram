@@ -81,3 +81,76 @@ public class BUZZER {
         future.cancel(false);
     }
 }
+
+
+
+-------------------------------------------------------------------------------------------------------
+
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.jiot.mid_term;
+
+import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import jdk.dio.DeviceManager;
+import jdk.dio.gpio.GPIOPin;
+
+/**
+ *
+ * @author comit25
+ */
+public class BuzzerController {
+    private GPIOPin pin = null;
+    private ScheduledExecutorService executor = null;
+    private ScheduledFuture future = null;
+    
+    public BuzzerController(String pinName) throws IOException{
+        pin = DeviceManager.open(pinName, GPIOPin.class);
+        executor = Executors.newSingleThreadScheduledExecutor();
+    }
+    
+    public void close() throws IOException{
+        stop();
+        if(executor != null){
+            executor.shutdown();
+        }
+        if(pin != null && pin.isOpen()){
+            pin.close();
+        }
+    }
+    
+    public void play(){
+        if(future != null){
+            return;
+        }
+
+        future = executor.scheduleWithFixedDelay(new Runnable(){
+                    @Override
+                    public void run() {
+                        try {
+                            pin.setValue(!pin.getValue());
+                        } catch (IOException ex) {
+                            Logger.getLogger(BuzzerController.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }, 0, 1915, TimeUnit.MICROSECONDS);
+    }
+    
+    public void stop(){
+        if(future == null){
+            return;
+        }
+
+        if(future != null){
+            future.cancel(false);
+            future = null;
+        }
+    }
+}

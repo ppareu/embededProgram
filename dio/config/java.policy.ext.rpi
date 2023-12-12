@@ -1,0 +1,49 @@
+#########################################################################
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+#########################################################################
+
+// this an example of java policy file with security permissions required for DIO library.
+
+// policy for DIO framework
+grant codeBase "file:./dio.jar" {
+        permission "java.util.PropertyPermission" "jdk.dio.registry", "read";
+        permission "java.io.FilePermission" "./dio.properties-raspberrypi", "read,write";
+        permission "java.lang.RuntimePermission" "loadLibrary.dio";
+// used by classloader when libdio.so is loaded
+        permission "java.util.PropertyPermission" "user.dir", "read";
+// these are necessary for open_by_id case (note! there should be no DeviceMgmtPermission)
+        permission jdk.dio.adc.ADCPermission "*:*";
+        permission jdk.dio.atcmd.ATPermission "*:*";
+        permission jdk.dio.counter.CounterPermission "*:*";
+        permission jdk.dio.dac.DACPermission "*:*";
+        permission jdk.dio.generic.GenericPermission "*:*";
+        permission jdk.dio.gpio.GPIOPinPermission "*:*", "open,setdirection";
+        permission jdk.dio.gpio.GPIOPortPermission "*:*";
+        permission jdk.dio.i2cbus.I2CPermission "*:*";
+        permission jdk.dio.pwm.PWMPermission "*:*";
+        permission jdk.dio.spibus.SPIPermission "*:*";
+        permission jdk.dio.uart.UARTPermission "*:*";
+        permission jdk.dio.watchdog.WatchdogTimerPermission "*:*";
+};

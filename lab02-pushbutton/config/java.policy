@@ -1,0 +1,6 @@
+grant {
+    permission jdk.dio.DeviceMgmtPermission "*:*", "open";
+    permission jdk.dio.generic.GenericPermission "*:*";
+    permission jdk.dio.gpio.GPIOPinPermission "*:*", "open,setdirection";
+    permission jdk.dio.gpio.GPIOPortPermission "*:*";
+};
